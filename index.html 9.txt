@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Scratch Card</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            background-color: #f5f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .card-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        /* The hidden message area behind the scratch layer */
+        .secret-message {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 310px;
+            height: 310px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: #fffdf0;
+            border: 2px dashed #d4af37;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .secret-message h2 {
+            margin: 0 0 10px 0;
+            color: #333333;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .secret-message p {
+            margin: 0;
+            color: #666666;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        /* Interactive overlay canvas */
+        #scratch-canvas {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 310px;
+            height: 310px;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <!-- Hidden underlying text -->
+        <div class="secret-message">
+            <h2>Remember the day</h2>
+            <p>Monday 12, 2026</p>
+        </div>
+        
+        <!-- Scratch coating canvas layer -->
+        <canvas id="scratch-canvas" width="310" height="310"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        // Initialize golden metallic background texture with a smooth gradient
+        function initCanvas() {
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#e5c060');
+            gradient.addColorStop(0.2, '#f3e09a');
+            gradient.addColorStop(0.4, '#d4af37');
+            gradient.addColorStop(0.6, '#f9ebb3');
+            gradient.addColorStop(0.8, '#aa8214');
+            gradient.addColorStop(1, '#d4af37');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add subtle metallic noise grain matching real ticket textures
+            for (let i = 0; i < 800; i++) {
+                let x = Math.random() * canvas.width;
+                let y = Math.random() * canvas.height;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.fillRect(x, y, 2, 2);
+            }
+        }
+
+        // Handle composite erasure when scratching 
+        function scratch(e) {
+            if (!isDrawing) return;
+            
+            // Get precise localized coordinates relative to the canvas box boundary
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            // Global composite rule to cut holes directly through the canvas layer
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = 35; // Size of scratch brush path
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        // Desktop Pointer Interaction Listeners
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            ctx.beginPath();
+            scratch(e);
+        });
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+        canvas.addEventListener('mousemove', scratch);
+
+        // Mobile / Tablet Touch Interaction Listeners
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            ctx.beginPath();
+            scratch(e);
+        });
+        window.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevents layout scrolling while scratching on mobile viewports
+            scratch(e);
+        });
+
+        // Initialize execution setup
+        initCanvas();
+    </script>
+</body>
+</html>
